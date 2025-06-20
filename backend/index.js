@@ -323,9 +323,14 @@ app.get("/listings/id/:id", wrapAsync(async (req, res) => {
   res.json(listing);
 }));
 
-// READ listings by category (e.g., /listings/ring)
+// READ listings by category (e.g., /listings/rings)
 app.get("/listings/:category", wrapAsync(async (req, res) => {
   const { category } = req.params;
+  // Only allow specific categories
+  const validCategories = ["rings", "necklaces", "earrings", "bracelets"];
+  if (!validCategories.includes(category)) {
+    throw new ExpressError("Category not found", 404);
+  }
   const listings = await Listing.find({ category });
   res.json(listings);
 }));
@@ -628,21 +633,3 @@ app.listen(8030, () => {
 });
   
   
-
-
-// Packages installed in backend
-// PS E:\VED\Coding\Projects\MERN Projects\e commerce\BASE1\backend> npm list
-// backend@1.0.0 E:\VED\Coding\Projects\MERN Projects\e commerce\BASE1\backend
-// ├── cloudinary@1.41.3
-// ├── cookie-parser@1.4.7
-// ├── cors@2.8.5
-// ├── dotenv@16.5.0
-// ├── express-session@1.18.1
-// ├── express@5.1.0
-// ├── joi@17.13.3
-// ├── mongoose@8.15.1
-// ├── multer-storage-cloudinary@4.0.0
-// ├── multer@1.4.5-lts.2
-// └── nodemon@3.1.10
-
-// PS E:\VED\Coding\Projects\MERN Projects\e commerce\BASE1\backend> 

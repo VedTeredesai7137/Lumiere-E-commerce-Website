@@ -626,14 +626,19 @@ app.get('/reviews/average/:listingId', wrapAsync(async (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../frontend2/build')));
   app.get('*', (req, res) => {
+    console.log("Requested path:", req.path);
     res.sendFile(path.join(__dirname, '../frontend2/build/index.html'));
   });
+  
 }
 
 const listEndpoints = require('express-list-endpoints');
 console.log("🔍 Registered Routes:");
-console.log(listEndpoints(app));
-
+try {
+  console.log(listEndpoints(app));
+} catch (err) {
+  console.error("❌ Route parsing failed:", err);
+}
 
 const PORT = process.env.PORT || 8030;
 app.listen(PORT, () => {

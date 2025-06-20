@@ -1,3 +1,4 @@
+/* eslint-env node */
 if (process.env.NODE_ENV !== "production") {
   require('dotenv').config();
 }
@@ -20,7 +21,7 @@ const ExpressError = require("./utils/ExpressError.js");
 const { listingSchema, reviewSchema, orderSchema } = require("./Schema.js");
 const Cart = require("./models/cart.js");
 const Order = require("./models/order.js");
-const { isLoggedIn, isAdmin } = require("./middleware/auth.js");
+const { isAdmin } = require("./middleware/auth.js");
 const multer = require("multer");
 const { storage } = require("./cloudconfig.js");
 const upload = multer({ storage });
@@ -477,7 +478,7 @@ app.patch("/cart/:userId/:productId", wrapAsync(async (req, res) => {
 }));
 
 // Error handler for other errors
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
   const { statusCode = 500, message = "Something went wrong" } = err;
   res.status(statusCode).json({ error: message });
 });
@@ -497,7 +498,7 @@ app.get("/orders/user/:userId", async (req, res) => {
     const orders = await Order.find({ userId })
       .populate("products.productId", "title price image");
     res.json(orders);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Error fetching orders" });
   }
 });
@@ -517,7 +518,7 @@ app.post("/orders", validateOrder, async (req, res) => {
     );
 
     res.status(201).json(newOrder);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Error creating order" });
   }
 });
@@ -539,7 +540,7 @@ app.put("/orders/:id/status", isAdmin, async (req, res) => {
     order.status = status;
     await order.save();
     res.json({ message: "Order status updated", order });
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Error updating status" });
   }
 });
@@ -550,7 +551,7 @@ app.get("/admin/orders", isAdmin, async (req, res) => {
       .populate("userId", "name email")
       .populate("products.productId", "title price image");
     res.json(orders);
-  } catch (err) {
+  } catch {
     res.status(500).json({ error: "Failed to fetch orders" });
   }
 });

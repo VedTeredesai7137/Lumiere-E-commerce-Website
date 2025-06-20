@@ -628,8 +628,8 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(8030, () => {
-  console.log("server is running on port 8030");
+const PORT = process.env.PORT || 8030;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-  
-  
+

@@ -632,13 +632,13 @@ if (process.env.NODE_ENV === 'production') {
   
 }
 
-const listEndpoints = require('express-list-endpoints');
-console.log("🔍 Registered Routes:");
-try {
-  console.log(listEndpoints(app));
-} catch (err) {
-  console.error("❌ Route parsing failed:", err);
-}
+// const listEndpoints = require('express-list-endpoints');
+// console.log("🔍 Registered Routes:");
+// try {
+//   console.log(listEndpoints(app));
+// } catch (err) {
+//   console.error("❌ Route parsing failed:", err);
+// }
 
 const PORT = process.env.PORT || 8030;
 app.listen(PORT, () => {

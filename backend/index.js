@@ -1,4 +1,5 @@
 /* eslint-env node */
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 if (process.env.NODE_ENV !== "production") {
   require('dotenv').config();
 }
@@ -628,6 +629,11 @@ if (process.env.NODE_ENV === 'production') {
     res.sendFile(path.join(__dirname, '../frontend2/build/index.html'));
   });
 }
+
+const listEndpoints = require('express-list-endpoints');
+console.log("🔍 Registered Routes:");
+console.log(listEndpoints(app));
+
 
 const PORT = process.env.PORT || 8030;
 app.listen(PORT, () => {

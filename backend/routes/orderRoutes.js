@@ -12,7 +12,10 @@ const {
 const { validateOrder } = require('../middleware/validate.js');
 const { isAdmin } = require('../middleware/auth.js');
 
-// Get user's orders
+// Get all orders (admin only) - more specific route first
+router.get("/admin/orders", isAdmin, getAllOrders);
+
+// Get user's orders - less specific route after
 router.get("/user/:userId", getUserOrders);
 
 // Create new order
@@ -20,8 +23,5 @@ router.post("/", validateOrder, createOrder);
 
 // Update order status (admin only)
 router.put("/:id/status", isAdmin, updateOrderStatus);
-
-// Get all orders (admin only)
-router.get("/admin/orders", isAdmin, getAllOrders);
 
 module.exports = router; 

@@ -23,10 +23,10 @@ router.post("/", upload.array('images', 3), createListing);
 // READ all listings
 router.get("/", getAllListings);
 
-// READ single listing by ID
+// READ single listing by ID (more specific route first)
 router.get("/id/:id", getListingById);
 
-// READ listings by category (e.g., /listings/rings)
+// READ listings by category (less specific route after)
 router.get("/:category", getListingsByCategory);
 
 // UPDATE listing

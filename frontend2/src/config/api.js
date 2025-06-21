@@ -1,7 +1,17 @@
 import axios from 'axios';
 
-// API base configuration
-const API_BASE_URL = 'http://localhost:8030';
+// Dynamic API base configuration
+const getApiBaseUrl = () => {
+  // If we're in production and served from the same domain as the backend
+  if (process.env.NODE_ENV === 'production') {
+    // Use relative URLs when frontend and backend are on the same domain
+    return '';
+  }
+  // Development environment
+  return 'http://localhost:8030';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 // Create axios instance with default configuration
 const api = axios.create({
@@ -35,4 +45,4 @@ api.interceptors.response.use(
 );
 
 export default api;
-export { API_BASE_URL }; 
+export { API_BASE_URL };

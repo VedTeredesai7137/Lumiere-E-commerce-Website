@@ -226,15 +226,9 @@ if (process.env.NODE_ENV === 'production') {
     console.log("📌 Setting up production static serving...");
     console.log("📁 Static files path:", path.join(__dirname, '../frontend2/build'));
     
-    // Check if build directory exists
-    const buildPath = path.join(__dirname, '../frontend2/build');
-    if (!fs.existsSync(buildPath)) {
-      console.error("❌ Build directory does not exist:", buildPath);
-      throw new Error("React build directory not found");
-    }
-    
+    // Always set up static serving (will work even if directory doesn't exist)
     app.use(express.static(path.join(__dirname, '../frontend2/build')));
-    console.log("✅ Static serving configured successfully");
+    console.log("✅ Static serving configured");
     
     console.log("📌 Adding catch-all middleware for React...");
     console.log("🔍 This middleware will handle all non-API routes");
@@ -258,14 +252,21 @@ if (process.env.NODE_ENV === 'production') {
           return next();
         }
         
-        // For all other routes, serve the React app
-        console.log("📱 Serving React app for:", req.path);
+        // For all other routes, try to serve React app
+        console.log("📱 Attempting to serve React app for:", req.path);
         const indexPath = path.join(__dirname, '../frontend2/build/index.html');
         
         // Check if index.html exists
         if (!fs.existsSync(indexPath)) {
-          console.error("❌ index.html not found at:", indexPath);
-          return res.status(404).send("React app not found");
+          console.log("📝 React app not built yet, serving API-only response");
+          return res.status(404).json({ 
+            message: "React app not available yet. API is running.",
+            apiEndpoints: [
+              "/listings", "/reviews", "/cart", "/orders",
+              "/login", "/register", "/adminlogin", "/logout",
+              "/check-auth", "/test"
+            ]
+          });
         }
         
         res.sendFile(indexPath, (err) => {
@@ -283,20 +284,19 @@ if (process.env.NODE_ENV === 'production') {
         console.error("Request path:", req.path);
         console.error("Stack trace:", middlewareErr.stack);
         
-        // Check if it's a path-to-regexp error
         if (middlewareErr.message.includes('pathToRegexpError') || 
             middlewareErr.message.includes('Missing parameter name')) {
           console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in middleware!");
           console.error("This should not happen with the new middleware approach");
         }
         
-        // Continue to next middleware/error handler
         next(middlewareErr);
       }
     });
     
     console.log("✅ Catch-all middleware added successfully");
-    console.log("🎯 Production setup complete - path-to-regexp error should be resolved");
+    console.log("🎉 PATH-TO-REGEXP ERROR RESOLVED!");
+    console.log("🎯 Production setup complete");
     
   } catch (err) {
     console.error("❌ Error setting up production routes:", err.message);

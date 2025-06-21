@@ -24,6 +24,16 @@ module.exports.reviewSchema = Joi.object({
   rating: Joi.number().min(1).max(5).required(),
   comment: Joi.string().required()
 });
+
+
+
+module.exports.cartItemSchema = Joi.object({
+  productId: Joi.string().required(),
+  quantity: Joi.number().min(1).required()
+});
+
+
+
 module.exports.orderSchema = Joi.object({
   userId: Joi.string().required(),
   products: Joi.array().items(

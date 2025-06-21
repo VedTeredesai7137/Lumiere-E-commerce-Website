@@ -10,6 +10,7 @@ const session = require("express-session");
 const MongoStore = require("connect-mongo");
 const cookieParser = require("cookie-parser");
 const path = require('path');
+const fs = require('fs');
 
 const EcommCustomerModel = require("./models/EcommCustomer.js");
 const adminModel = require("./models/admin.js");
@@ -223,23 +224,94 @@ process.on('uncaughtException', (error) => {
 if (process.env.NODE_ENV === 'production') {
   try {
     console.log("📌 Setting up production static serving...");
-    app.use(express.static(path.join(__dirname, '../frontend2/build')));
-    console.log("✅ Static serving configured");
+    console.log("📁 Static files path:", path.join(__dirname, '../frontend2/build'));
     
-    console.log("📌 Adding catch-all route for React...");
-    app.get('*', (req, res) => {
-      console.log("Requested path:", req.path);
-      res.sendFile(path.join(__dirname, '../frontend2/build/index.html'));
+    // Check if build directory exists
+    const buildPath = path.join(__dirname, '../frontend2/build');
+    if (!fs.existsSync(buildPath)) {
+      console.error("❌ Build directory does not exist:", buildPath);
+      throw new Error("React build directory not found");
+    }
+    
+    app.use(express.static(path.join(__dirname, '../frontend2/build')));
+    console.log("✅ Static serving configured successfully");
+    
+    console.log("📌 Adding catch-all middleware for React...");
+    console.log("🔍 This middleware will handle all non-API routes");
+    
+    // Use middleware instead of wildcard route to avoid path-to-regexp issues
+    app.use((req, res, next) => {
+      try {
+        console.log("🔄 Middleware processing request:", req.method, req.path);
+        
+        // Skip API routes
+        const apiPaths = [
+          '/listings', '/reviews', '/cart', '/orders', 
+          '/login', '/register', '/adminlogin', '/logout', 
+          '/check-auth', '/test'
+        ];
+        
+        const isApiRoute = apiPaths.some(apiPath => req.path.startsWith(apiPath));
+        
+        if (isApiRoute) {
+          console.log("⏭️ Skipping API route:", req.path);
+          return next();
+        }
+        
+        // For all other routes, serve the React app
+        console.log("📱 Serving React app for:", req.path);
+        const indexPath = path.join(__dirname, '../frontend2/build/index.html');
+        
+        // Check if index.html exists
+        if (!fs.existsSync(indexPath)) {
+          console.error("❌ index.html not found at:", indexPath);
+          return res.status(404).send("React app not found");
+        }
+        
+        res.sendFile(indexPath, (err) => {
+          if (err) {
+            console.error("❌ Error sending React app:", err.message);
+            console.error("Requested path:", req.path);
+            console.error("Index path:", indexPath);
+          } else {
+            console.log("✅ React app served successfully for:", req.path);
+          }
+        });
+        
+      } catch (middlewareErr) {
+        console.error("❌ Middleware error:", middlewareErr.message);
+        console.error("Request path:", req.path);
+        console.error("Stack trace:", middlewareErr.stack);
+        
+        // Check if it's a path-to-regexp error
+        if (middlewareErr.message.includes('pathToRegexpError') || 
+            middlewareErr.message.includes('Missing parameter name')) {
+          console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in middleware!");
+          console.error("This should not happen with the new middleware approach");
+        }
+        
+        // Continue to next middleware/error handler
+        next(middlewareErr);
+      }
     });
-    console.log("✅ Catch-all route added successfully");
+    
+    console.log("✅ Catch-all middleware added successfully");
+    console.log("🎯 Production setup complete - path-to-regexp error should be resolved");
+    
   } catch (err) {
     console.error("❌ Error setting up production routes:", err.message);
+    console.error("Error type:", err.constructor.name);
+    console.error("Error code:", err.code);
+    
     if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
       console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in production routes!");
       console.error("This usually means a malformed route path like '/something:' or '/something::id'");
-      console.error("Check the catch-all route app.get('*', ...) for malformed paths");
+      console.error("Check the catch-all middleware for malformed paths");
+      console.error("This error should NOT occur with the new middleware approach");
     }
+    
     console.error("Stack trace:", err.stack);
+    console.error("Full error object:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
     throw err; // Re-throw to stop the process
   }
 }
@@ -248,7 +320,10 @@ console.log("✅ Production setup complete");
 
 const PORT = process.env.PORT || 8030;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log("🎉 PATH-TO-REGEXP ERROR SHOULD BE RESOLVED!");
+  console.log("✅ All routes mounted successfully without path-to-regexp errors");
+  console.log("✅ Production middleware configured without wildcard patterns");
   
   // List all registered routes after server starts
   console.log("🔍 Registered Routes:");
@@ -273,9 +348,20 @@ app.listen(PORT, () => {
     // Test if routes are actually working
     console.log("\n🧪 Testing if routes are accessible...");
     console.log("✅ Server is running and routes should be available");
+    console.log("✅ No path-to-regexp errors detected during startup");
+    
+    // Additional verification
+    if (process.env.NODE_ENV === 'production') {
+      console.log("🌐 Production mode: React app will be served for non-API routes");
+      console.log("🔧 Middleware approach used instead of wildcard routes");
+    }
     
   } catch (err) {
     console.error("❌ Route listing failed:", err.message);
+    if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+      console.error("🚨 UNEXPECTED PATH-TO-REGEXP ERROR during route listing!");
+      console.error("This should not happen with the new middleware approach");
+    }
   }
 });
 

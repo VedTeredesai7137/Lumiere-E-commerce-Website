@@ -24,6 +24,14 @@ const authorizationRoutes = require("./routes/authorization.js");
 
 console.log("✅ All route files imported successfully");
 
+// Debug: Check route objects
+console.log("🔍 Debugging route objects:");
+console.log("listingRoutes type:", typeof listingRoutes);
+console.log("reviewRoutes type:", typeof reviewRoutes);
+console.log("cartRoutes type:", typeof cartRoutes);
+console.log("orderRoutes type:", typeof orderRoutes);
+console.log("authorizationRoutes type:", typeof authorizationRoutes);
+
 const app = express();
 
 // Log important environment variables
@@ -70,34 +78,170 @@ app.use(session(sessionOptions));
 
 console.log("✅ Middleware setup complete");
 
-// Use modular routes
-app.use("/listings", listingRoutes);
-app.use("/reviews", reviewRoutes);
-app.use("/cart", cartRoutes);
-app.use("/orders", orderRoutes);
-app.use("/", authorizationRoutes);
+// Use modular routes with detailed error handling
+console.log("🔧 Mounting routes with error handling...");
+
+// Wrap entire route mounting in try-catch for path-to-regexp errors
+try {
+  console.log("📌 Mounting /listings routes...");
+  app.use("/listings", listingRoutes);
+  console.log("✅ /listings routes mounted successfully");
+} catch (err) {
+  console.error("❌ Error mounting /listings routes:", err.message);
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in /listings routes!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all routes in listingRoutes.js for malformed paths");
+  }
+  console.error("Stack trace:", err.stack);
+  throw err; // Re-throw to stop the process
+}
+
+try {
+  console.log("📌 Mounting /reviews routes...");
+  app.use("/reviews", reviewRoutes);
+  console.log("✅ /reviews routes mounted successfully");
+} catch (err) {
+  console.error("❌ Error mounting /reviews routes:", err.message);
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in /reviews routes!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all routes in reviewRoutes.js for malformed paths");
+  }
+  console.error("Stack trace:", err.stack);
+  throw err; // Re-throw to stop the process
+}
+
+try {
+  console.log("📌 Mounting /cart routes...");
+  app.use("/cart", cartRoutes);
+  console.log("✅ /cart routes mounted successfully");
+} catch (err) {
+  console.error("❌ Error mounting /cart routes:", err.message);
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in /cart routes!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all routes in cartRoutes.js for malformed paths");
+  }
+  console.error("Stack trace:", err.stack);
+  throw err; // Re-throw to stop the process
+}
+
+try {
+  console.log("📌 Mounting /orders routes...");
+  app.use("/orders", orderRoutes);
+  console.log("✅ /orders routes mounted successfully");
+} catch (err) {
+  console.error("❌ Error mounting /orders routes:", err.message);
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in /orders routes!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all routes in orderRoutes.js for malformed paths");
+  }
+  console.error("Stack trace:", err.stack);
+  throw err; // Re-throw to stop the process
+}
+
+try {
+  console.log("📌 Mounting authorization routes...");
+  app.use("/", authorizationRoutes);
+  console.log("✅ Authorization routes mounted successfully");
+} catch (err) {
+  console.error("❌ Error mounting authorization routes:", err.message);
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in authorization routes!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all routes in authorization.js for malformed paths");
+  }
+  console.error("Stack trace:", err.stack);
+  throw err; // Re-throw to stop the process
+}
 
 console.log("✅ All routes mounted");
 
-app.get("/test", (req, res) => {
-  res.send("Test route works");
-});
+try {
+  console.log("📌 Adding test route...");
+  app.get("/test", (req, res) => {
+    res.send("Test route works");
+  });
+  console.log("✅ Test route added successfully");
+} catch (err) {
+  console.error("❌ Error adding test route:", err.message);
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in test route!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+  }
+  console.error("Stack trace:", err.stack);
+  throw err; // Re-throw to stop the process
+}
 
 console.log("✅ Test route added");
 
 // Error handler for other errors (must come after all routes)
 app.use((err, req, res, next) => {
+  console.error("🚨 Global error handler caught:", err.message);
+  
+  // Specific handling for path-to-regexp errors
+  if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in global error handler!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all route definitions for malformed paths");
+    console.error("Request URL:", req.url);
+    console.error("Request method:", req.method);
+  }
+  
+  console.error("Error stack:", err.stack);
+  console.error("Request URL:", req.url);
+  console.error("Request method:", req.method);
+  
   const { statusCode = 500, message = "Something went wrong" } = err;
   res.status(statusCode).json({ error: message });
 });
 
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+  if (reason && reason.message && (reason.message.includes('pathToRegexpError') || reason.message.includes('Missing parameter name'))) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in unhandled rejection!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+  }
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('🚨 Uncaught Exception:', error.message);
+  if (error.message.includes('pathToRegexpError') || error.message.includes('Missing parameter name')) {
+    console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in uncaught exception!");
+    console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+    console.error("Check all route definitions for malformed paths");
+  }
+  console.error('Stack trace:', error.stack);
+  process.exit(1);
+});
+
 // --- Serve React frontend build in production ---
 if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend2/build')));
-  app.get('*', (req, res) => {
-    console.log("Requested path:", req.path);
-    res.sendFile(path.join(__dirname, '../frontend2/build/index.html'));
-  });
+  try {
+    console.log("📌 Setting up production static serving...");
+    app.use(express.static(path.join(__dirname, '../frontend2/build')));
+    console.log("✅ Static serving configured");
+    
+    console.log("📌 Adding catch-all route for React...");
+    app.get('*', (req, res) => {
+      console.log("Requested path:", req.path);
+      res.sendFile(path.join(__dirname, '../frontend2/build/index.html'));
+    });
+    console.log("✅ Catch-all route added successfully");
+  } catch (err) {
+    console.error("❌ Error setting up production routes:", err.message);
+    if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
+      console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in production routes!");
+      console.error("This usually means a malformed route path like '/something:' or '/something::id'");
+      console.error("Check the catch-all route app.get('*', ...) for malformed paths");
+    }
+    console.error("Stack trace:", err.stack);
+    throw err; // Re-throw to stop the process
+  }
 }
 
 console.log("✅ Production setup complete");

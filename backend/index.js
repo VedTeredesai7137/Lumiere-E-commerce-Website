@@ -252,6 +252,19 @@ if (process.env.NODE_ENV === 'production') {
           return next();
         }
         
+        // Skip static assets (let express.static handle them)
+        if (req.path.startsWith('/assets/') || 
+            req.path.startsWith('/static/') || 
+            req.path.includes('.js') || 
+            req.path.includes('.css') || 
+            req.path.includes('.ico') || 
+            req.path.includes('.png') || 
+            req.path.includes('.jpg') || 
+            req.path.includes('.svg')) {
+          console.log("📦 Skipping static asset:", req.path);
+          return next();
+        }
+        
         // For all other routes, try to serve React app
         console.log("📱 Attempting to serve React app for:", req.path);
         const indexPath = path.join(__dirname, '../frontend2/build/index.html');

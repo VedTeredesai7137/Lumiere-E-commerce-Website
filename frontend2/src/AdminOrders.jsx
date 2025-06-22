@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from './config/api.js';
 import ErrorMessage from './components/ErrorMessage';
 
 const AdminOrders = () => {
@@ -11,13 +13,13 @@ const AdminOrders = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:8030/admin/orders", {
+      const res = await api.get("/admin/orders", {
         withCredentials: true
       });
       setOrders(res.data);
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || "Access denied or server error");
+    } catch (error) {
+      console.error(error);
+      setError(((error.response?.data?.message) || "Access denied or server error"));
     } finally {
       setLoading(false);
     }
@@ -26,24 +28,17 @@ const AdminOrders = () => {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       setUpdatingStatus(orderId);
-      await axios.put(`http://localhost:8030/orders/${orderId}/status`, 
-        { status: newStatus },
-        { withCredentials: true }
-      );
+      await api.put(`/orders/${orderId}/status`, {
+        status: newStatus
+      }, { withCredentials: true });
       
-      // Update the order in local state
-      setOrders(prevOrders => 
-        prevOrders.map(order => 
-          order._id === orderId 
-            ? { ...order, status: newStatus }
-            : order
-        )
-      );
-      
-      alert('Order status updated successfully!');
-    } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.error || 'Failed to update order status');
+      setOrders(orders.map(order => 
+        order._id === orderId ? { ...order, status: newStatus } : order
+      ));
+      alert("Order status updated successfully!");
+    } catch (error) {
+      console.error(error);
+      alert(((error.response?.data?.message) || "Failed to update order status"));
     } finally {
       setUpdatingStatus(null);
     }

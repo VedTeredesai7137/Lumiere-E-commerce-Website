@@ -368,7 +368,7 @@ app.listen(PORT, () => {
       console.log("🌐 Production mode: React app will be served for non-API routes");
       console.log("🔧 Middleware approach used instead of wildcard routes");
     }
-    
+
   } catch (err) {
     console.error("❌ Route listing failed:", err.message);
     if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {

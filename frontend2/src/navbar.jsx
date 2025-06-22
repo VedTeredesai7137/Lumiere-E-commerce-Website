@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css'
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import api from './config/api.js';
 
 const Navbar = () => {
   const [userData, setUserData] = useState(null);
@@ -14,27 +15,20 @@ const Navbar = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
-        
         if (response.data.status === "ok") {
-          const user = response.data.user;
-          if (user.role === "admin") {
-            setAdminData(user);
-            sessionStorage.setItem('adminData', JSON.stringify(user));
-          } else {
-            setUserData(user);
-            sessionStorage.setItem('userData', JSON.stringify(user));
-            // Fetch cart count for regular users
-            fetchCartCount(user._id);
-          }
+          const userData = response.data.user;
+          sessionStorage.setItem("userData", JSON.stringify(userData));
+          setUserData(userData);
+          setAdminData(userData.role === "admin" ? userData : null);
+          fetchCartCount(userData._id);
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
-        // Clear any stale data
-        sessionStorage.removeItem('userData');
-        sessionStorage.removeItem('adminData');
+      } catch (error) {
+        console.error("Auth check error:", error);
+        sessionStorage.removeItem("userData");
+        sessionStorage.removeItem("adminData");
         setUserData(null);
         setAdminData(null);
       }
@@ -55,7 +49,7 @@ const Navbar = () => {
 
   const fetchCartCount = async (userId) => {
     try {
-      const response = await axios.get(`http://localhost:8030/cart/${userId}`, {
+      const response = await api.get(`/cart/${userId}`, {
         withCredentials: true
       });
       if (response.data && response.data.items) {
@@ -68,14 +62,13 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:8030/logout", {}, { withCredentials: true });
-      // Clear both user and admin data
-      sessionStorage.removeItem('userData');
-      sessionStorage.removeItem('adminData');
+      await api.post("/logout", {}, { withCredentials: true });
+      sessionStorage.removeItem("userData");
+      sessionStorage.removeItem("adminData");
       setUserData(null);
       setAdminData(null);
       setCartCount(0);
-      navigate('/');
+      navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
     }
@@ -90,25 +83,18 @@ const Navbar = () => {
     e.preventDefault();
     if (searchQuery.trim()) {
       try {
-
-        const response = await fetch('http://localhost:8030/listings');
+        const response = await fetch('/listings');
         const listings = await response.json();
-        
-
-        const matchingListing = listings.find(listing => 
+        const foundListing = listings.find(listing => 
           listing.title.toLowerCase().includes(searchQuery.toLowerCase())
         );
-
-        if (matchingListing) {
-          // Navigate to the product page
-          navigate(`/product/${matchingListing._id}`);
+        if (foundListing) {
+          navigate(`/product/${foundListing._id}`);
         } else {
-          // If no match found, show alert
-          alert('No product found matching your search');
+          alert("No product found matching your search");
         }
       } catch (error) {
-        console.error('Error searching products:', error);
-        alert('Error searching products. Please try again.');
+        console.error("Error searching:", error);
       }
     }
   };

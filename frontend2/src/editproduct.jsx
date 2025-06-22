@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, useParams } from 'react-router-dom';
 import './App.css';
+import api from './config/api.js';
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -32,25 +33,38 @@ const EditProduct = () => {
     }
     // Fetch product data
     const fetchProduct = async () => {
+      if (!id) {
+        setError("No product ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
-        const res = await axios.get(`http://localhost:8030/listings/id/${id}`);
+        setLoading(true);
+        const res = await api.get(`/listings/id/${id}`);
         if (res.data) {
           setListing({
-            title: res.data.title || '',
-            category: res.data.category || 'ring',
-            price: res.data.price || '',
-            description: res.data.description || '',
-            metalType: res.data.metalType || 'gold',
-            metalPurity: res.data.metalPurity || '18k',
+            title: res.data.title || "",
+            category: res.data.category || "ring",
+            price: res.data.price || "",
+            description: res.data.description || "",
+            metalType: res.data.metalType || "gold",
+            metalPurity: res.data.metalPurity || "",
             gemstones: res.data.gemstones || []
           });
           // Set image previews if available
           if (res.data.images && res.data.images.length > 0) {
             setImagePreview(res.data.images.map(img => img.url));
           }
+          setLoading(false);
+        } else {
+          setError("Product not found");
+          setLoading(false);
         }
-      } catch (err) {
-        setError('Failed to load product data.');
+      } catch (error) {
+        console.error("Error fetching product:", error);
+        setError("Failed to load product");
+        setLoading(false);
       }
     };
     fetchProduct();
@@ -102,41 +116,49 @@ const EditProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
-    if (!listing.title || !listing.price) {
-      setError("Please fill in all required fields");
-      setLoading(false);
-      return;
-    }
+    setError("");
+
     try {
-      const gemstones = Array.isArray(listing.gemstones) ? listing.gemstones : [];
       const listingData = {
         title: listing.title,
         category: listing.category,
         price: listing.price,
-        description: listing.description || '',
+        description: listing.description,
         metalType: listing.metalType,
         metalPurity: listing.metalPurity,
-        gemstones: gemstones
+        gemstones: listing.gemstones
       };
-      // If new images selected, use FormData, else send JSON
+
       if (selectedImages.length > 0) {
         const formData = new FormData();
-        formData.append("listing", JSON.stringify(listingData));
+        formData.append("title", listing.title);
+        formData.append("description", listing.description);
+        formData.append("price", listing.price);
+        formData.append("category", listing.category);
+        formData.append("metalType", listing.metalType);
+        formData.append("metalPurity", listing.metalPurity);
+        formData.append("gemstones", JSON.stringify(listing.gemstones));
+
         selectedImages.forEach((image) => {
           formData.append("images", image);
         });
-        await axios.put(`http://localhost:8030/listings/${id}`, formData, {
-          headers: { "Content-Type": "multipart/form-data", withCredentials: true },
+
+        await api.put(`/listings/${id}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            withCredentials: true
+          }
         });
       } else {
-        await axios.put(`http://localhost:8030/listings/${id}`, { listing: listingData }, { withCredentials: true });
+        await api.put(`/listings/${id}`, { listing: listingData }, { withCredentials: true });
       }
+
       alert("Listing updated successfully!");
       navigate(`/product/${id}`);
-    } catch (err) {
-      setError(err.response?.data?.error || "Error updating listing. Please try again.");
+    } catch (error) {
+      console.error("Error updating listing:", error);
+      setError(((error.response?.data?.error) || "Failed to update listing"));
     } finally {
       setLoading(false);
     }

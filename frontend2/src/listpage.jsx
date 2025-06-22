@@ -6,6 +6,7 @@ import Navbar from './navbar';
 import Footbar from './footbar';
 import StarRating from './starrating';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 function ListPage() {
   const [jewelryData, setJewelryData] = useState([]);
@@ -55,41 +56,46 @@ function ListPage() {
   const currentCategory = categoryConfig[category];
 
   useEffect(() => {
-    const fetchJewelry = async () => {
+    const fetchListings = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8030/listings/${currentCategory.endpoint}`);
+        const response = await api.get(`/listings/${currentCategory.endpoint}`);
         setJewelryData(response.data);
         
-        // Fetch reviews for each jewelry item
-        const reviewsPromises = response.data.map(async (item) => {
+        // Fetch average ratings for each listing
+        const ratingPromises = response.data.map(async (item) => {
           try {
-            const reviewResponse = await axios.get(`http://localhost:8030/reviews/average/${item._id}`);
-            return { id: item._id, averageRating: reviewResponse.data.averageRating || 0 };
-          } catch (err) {
-            return { id: item._id, averageRating: 0 };
+            const reviewResponse = await api.get(`/reviews/average/${item._id}`);
+            return {
+              id: item._id,
+              averageRating: reviewResponse.data.averageRating || 0
+            };
+          } catch (error) {
+            return {
+              id: item._id,
+              averageRating: 0
+            };
           }
         });
-        
-        const reviewsResults = await Promise.all(reviewsPromises);
-        const reviewsMap = {};
-        reviewsResults.forEach(result => {
-          reviewsMap[result.id] = result.averageRating;
+
+        const ratings = await Promise.all(ratingPromises);
+        const ratingsMap = {};
+        ratings.forEach(rating => {
+          ratingsMap[rating.id] = rating.averageRating;
         });
-        setReviewsData(reviewsMap);
-        
-        setLoading(false);
-      } catch (err) {
-        console.error(`Failed to load ${currentCategory.plural}:`, err);
-        setError(`Failed to load ${currentCategory.plural}. Please try again later.`);
+        setReviewsData(ratingsMap);
+      } catch (error) {
+        console.error("Error fetching listings:", error);
+        setError("Failed to load products");
+      } finally {
         setLoading(false);
       }
     };
 
-    if (category && categoryConfig[category]) {
-      fetchJewelry();
+    if (currentCategory) {
+      fetchListings();
     }
-  }, [category, currentCategory.endpoint, currentCategory.plural]);
+  }, [currentCategory]);
 
   const handleJewelryClick = (jewelryId) => {
     navigate(`/product/${jewelryId}`);

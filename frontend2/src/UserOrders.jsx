@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import Footbar from './footbar';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 const UserOrders = () => {
   const [orders, setOrders] = useState([]);
@@ -16,35 +17,35 @@ const UserOrders = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
         if (response.data.status === "ok") {
           const userData = response.data.user;
           sessionStorage.setItem('userData', JSON.stringify(userData));
           setUserId(userData._id);
-          fetchUserOrders(userData._id);
+          fetchOrders(userData._id);
         } else {
           navigate("/login");
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
         navigate("/login");
       }
     };
     checkAuth();
   }, [navigate]);
 
-  const fetchUserOrders = async (userId) => {
+  const fetchOrders = async (userId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8030/orders/user/${userId}`, {
+      const response = await api.get(`/orders/user/${userId}`, {
         withCredentials: true
       });
       setOrders(response.data);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      setError(err.response?.data?.error || "Failed to load orders");
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      setError(((error.response?.data?.error) || "Failed to load orders"));
     } finally {
       setLoading(false);
     }

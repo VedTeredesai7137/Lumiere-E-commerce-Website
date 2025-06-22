@@ -5,6 +5,7 @@ import './App.css';
 import Navbar from './navbar';
 import Footbar from './footbar';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 function Profile() {
   const [userData, setUserData] = useState(null);
@@ -15,24 +16,23 @@ function Profile() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
         if (response.data.status === "ok") {
-          const user = response.data.user;
-          setUserData(user);
-          sessionStorage.setItem('userData', JSON.stringify(user));
+          const userData = response.data.user;
+          sessionStorage.setItem("userData", JSON.stringify(userData));
+          setUserData(userData);
         } else {
           navigate("/login");
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
         navigate("/login");
       } finally {
         setLoading(false);
       }
     };
-
     checkAuth();
   }, [navigate]);
 

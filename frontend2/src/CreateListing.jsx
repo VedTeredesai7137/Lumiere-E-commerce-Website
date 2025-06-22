@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import Footbar from './footbar';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 const CreateListing = () => {
   const navigate = useNavigate();
@@ -80,86 +81,37 @@ const CreateListing = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
-
-    // Validate required fields
-    if (!listing.title || !listing.price) {
-      setError("Please fill in all required fields");
-      setLoading(false);
-      return;
-    }
-
-    // Validate that at least one image is selected
-    if (selectedImages.length === 0) {
-      setError("Please select at least one image");
-      setLoading(false);
-      return;
-    }
+    setError("");
 
     try {
-      // Ensure gemstones is always an array
-      const gemstones = Array.isArray(listing.gemstones) ? listing.gemstones : [];
-      
-      console.log('Sending listing data:', {
-        title: listing.title,
-        category: listing.category,
-        price: listing.price,
-        description: listing.description || '',
-        metalType: listing.metalType,
-        metalPurity: listing.metalPurity,
-        gemstones: gemstones
-      });
-      
-      // Create the listing object
-      const listingData = {
-        title: listing.title,
-        category: listing.category,
-        price: listing.price,
-        description: listing.description || '',
-        metalType: listing.metalType,
-        metalPurity: listing.metalPurity,
-        gemstones: gemstones
-      };
-
       const formData = new FormData();
-      
-      // Add listing data as JSON string
-      formData.append("listing", JSON.stringify(listingData));
-      
-      // Add images
+      formData.append("title", listing.title);
+      formData.append("description", listing.description);
+      formData.append("price", listing.price);
+      formData.append("category", listing.category);
+      formData.append("metalType", listing.metalType);
+
+      // Append images
       selectedImages.forEach((image) => {
         formData.append("images", image);
       });
 
-      console.log('FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-
-      const response = await axios.post("http://localhost:8030/listings", formData, {
-        headers: { 
+      const response = await api.post("/listings", formData, {
+        headers: {
           "Content-Type": "multipart/form-data",
           withCredentials: true
         },
-        timeout: 30000 // 30 second timeout
+        timeout: 30000
       });
 
       if (response.status === 201) {
         alert("Listing created successfully!");
         navigate("/home");
       }
-    } catch (err) {
-      console.error("Error creating listing:", err);
-      let errorMessage = "Error creating listing. Please try again.";
-      
-      if (err.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      setError(errorMessage);
+    } catch (error) {
+      console.error("Error creating listing:", error);
+      setError(error.response?.data?.error || "Failed to create listing");
     } finally {
       setLoading(false);
     }

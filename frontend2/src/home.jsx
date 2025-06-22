@@ -7,6 +7,7 @@ import Navbar from './navbar';
 import HeroSection from './herosection';
 import Footbar from './footbar';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 
 const Home = () => {
@@ -20,27 +21,28 @@ const Home = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
         if (response.data.status === "ok") {
           const userData = response.data.user;
-          sessionStorage.setItem('userData', JSON.stringify(userData));
+          sessionStorage.setItem("userData", JSON.stringify(userData));
+          setLoggedInUser(userData);
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
     };
 
     const fetchListings = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:8030/listings", {
+        const response = await api.get("/listings", {
           withCredentials: true
         });
         setListings(response.data);
-      } catch (err) {
-        console.error("Error fetching listings:", err);
+      } catch (error) {
+        console.error("Error fetching listings:", error);
         setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import api from './config/api.js';
 import './App.css'
 import ErrorMessage from './components/ErrorMessage';
 
@@ -14,16 +15,17 @@ function Login() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
-        if (response.data.status === "ok") {
-          // Store user data in sessionStorage
-          sessionStorage.setItem('userData', JSON.stringify(response.data.user));
+        if (response.data.status === "ok" && response.data.result) {
+          const userData = response.data.result;
+          console.log("User data from response:", userData);
+          sessionStorage.setItem("userData", JSON.stringify(userData));
           navigate("/home");
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
     };
     checkAuth();
@@ -34,10 +36,10 @@ function Login() {
     setError("");
     
     try {
-      const result = await axios.post("http://localhost:8030/login", 
-        { email, password },
-        { withCredentials: true }
-      );
+      const result = await api.post("/login", {
+        email: email,
+        password: password
+      }, { withCredentials: true });
       
       if (result.data.status === "ok" && result.data.result) {
         const userData = result.data.result;
@@ -48,11 +50,11 @@ function Login() {
         
         navigate("/home");
       } else {
-        setError(result.data.error || "Login failed. Check your credentials.");
+        setError(result.data.error || "Login failed");
       }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("Login failed. Please try again later.");
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.response?.data?.error || "Login failed");
     }
   };
 

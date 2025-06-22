@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './App.css'
+import api from './config/api.js';
 
 const PlaceOrder = () => {
   const location = useLocation();
@@ -49,32 +50,24 @@ const PlaceOrder = () => {
     return true;
   };
 
-  const handlePlaceOrder = async () => {
-    if (!validateForm()) return;
-    
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
-    setError('');
-
-    const products = cartItems.map(item => ({
-      productId: item.product._id,
-      quantity: item.quantity
-    }));
+    setError("");
 
     try {
-      const res = await axios.post("http://localhost:8030/orders", {
-        userId,
-        products,
-        totalAmount,
-        shippingInfo
-      }, {
-        withCredentials: true
-      });
+      const res = await api.post("/orders", {
+        userId: userId,
+        products: cartItems,
+        totalAmount: totalAmount,
+        shippingInfo: shippingInfo
+      }, { withCredentials: true });
 
       alert("Order placed successfully!");
-      navigate('/home'); // Redirect to home after successful order
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.error || "Failed to place order");
+      navigate("/home");
+    } catch (error) {
+      console.error(error);
+      setError(((error.response?.data?.error) || "Failed to place order"));
     } finally {
       setLoading(false);
     }
@@ -189,7 +182,7 @@ const PlaceOrder = () => {
         </div>
 
         <button
-          onClick={handlePlaceOrder}
+          onClick={handleSubmit}
           disabled={loading}
           className="mt-6 w-full bg-orange-500 hover:bg-orange-600 text-white py-3 rounded-full shadow-lg font-medium transition duration-200 disabled:opacity-50"
         >

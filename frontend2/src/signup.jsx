@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import api from './config/api.js';
 import './App.css'
 
 function Signup() {
@@ -14,14 +15,14 @@ function Signup() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
         if (response.data.status === "ok") {
           navigate("/home");
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
     };
     checkAuth();
@@ -30,32 +31,36 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+
     try {
-      const result = await axios.post("http://localhost:8030/register", 
-        { name, email, password },
-        { withCredentials: true }
-      );
+      const result = await api.post("/register", {
+        name: name,
+        email: email,
+        password: password
+      }, { withCredentials: true });
+
       console.log("Registration response:", result.data);
+
       if (result.data._id) {
-        // After successful registration, automatically log in the user
-        const loginResult = await axios.post("http://localhost:8030/login",
-          { email, password },
-          { withCredentials: true }
-        );
-        
+        // Auto-login after successful registration
+        const loginResult = await api.post("/login", {
+          email: email,
+          password: password
+        }, { withCredentials: true });
+
         if (loginResult.data.status === "ok") {
-          sessionStorage.setItem('userData', JSON.stringify(loginResult.data.result));
+          sessionStorage.setItem("userData", JSON.stringify(loginResult.data.result));
           navigate("/home");
         } else {
           alert("Registration successful! Please login.");
           navigate("/login");
         }
       } else {
-        setError("Registration failed. Please try again.");
+        setError(result.data.error || "Registration failed");
       }
-    } catch (err) {
-      console.error("Registration error:", err);
-      setError(err.response?.data?.error || "Registration failed. Please try again.");
+    } catch (error) {
+      console.error("Registration error:", error);
+      setError(error.response?.data?.error || "Registration failed");
     }
   };
 

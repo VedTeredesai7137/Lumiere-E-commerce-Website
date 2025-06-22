@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from './navbar';
 import Footbar from './footbar';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const CartPage = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
         if (response.data.status === "ok") {
@@ -27,8 +28,8 @@ const CartPage = () => {
         } else {
           navigate("/login");
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
         navigate("/login");
       }
     };
@@ -38,7 +39,7 @@ const CartPage = () => {
   const fetchCart = async (userId) => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:8030/cart/${userId}`, {
+      const response = await api.get(`/cart/${userId}`, {
         withCredentials: true
       });
       setCartItems(response.data.items || []);
@@ -55,7 +56,7 @@ const CartPage = () => {
     
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:8030/cart/${userId}/${productId}`, {
+      await api.delete(`/cart/${userId}/${productId}`, {
         withCredentials: true
       });
       fetchCart(userId);
@@ -72,8 +73,8 @@ const CartPage = () => {
     
     try {
       setLoading(true);
-      await axios.patch(
-        `http://localhost:8030/cart/${userId}/${productId}`,
+      await api.patch(
+        `/cart/${userId}/${productId}`,
         { quantity: newQuantity },
         { withCredentials: true }
       );

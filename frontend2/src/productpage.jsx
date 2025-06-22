@@ -6,6 +6,7 @@ import Navbar from './navbar';
 import Footbar from './footbar';
 import StarRating from './starrating';
 import ErrorMessage from './components/ErrorMessage';
+import api from './config/api.js';
 
 function ProductPage() {
   const { id } = useParams();
@@ -39,70 +40,72 @@ function ProductPage() {
 
   useEffect(() => {
     const fetchProduct = async () => {
+      if (!id) {
+        setError("No product ID provided");
+        setLoading(false);
+        return;
+      }
+
       try {
-        console.log('Fetching product with ID:', id); // Debug log
-        const response = await axios.get(`http://localhost:8030/listings/id/${id}`);
-        console.log('Product data:', response.data); // Debug log
+        setLoading(true);
+        console.log("Fetching product with ID:", id);
+        const response = await api.get(`/listings/id/${id}`);
+        console.log("Product data:", response.data);
         
         if (response.data) {
           setProduct(response.data);
-          // Reset selected image when product changes
-          setSelectedImage(0);
+          setQuantity(1);
         } else {
           setError("Product not found");
         }
         setLoading(false);
-      } catch (err) {
-        console.error("Failed to load product:", err);
-        setError(err.response?.data?.error || "Failed to load product details. Please try again later.");
+      } catch (error) {
+        console.error("Failed to load product:", error);
+        setError(((error.response?.data?.message) || "Failed to load product"));
         setLoading(false);
       }
     };
 
     const checkAuth = async () => {
       try {
-        const response = await axios.get("http://localhost:8030/check-auth", {
+        const response = await api.get("/check-auth", {
           withCredentials: true
         });
         if (response.data.status === "ok") {
           const userData = response.data.user;
-          sessionStorage.setItem('userData', JSON.stringify(userData));
+          sessionStorage.setItem("userData", JSON.stringify(userData));
           setUserId(userData._id);
-          setIsAdmin(userData.role === 'admin');
+          setIsAdmin(userData.role === "admin");
         }
-      } catch (err) {
-        console.error("Auth check error:", err);
+      } catch (error) {
+        console.error("Auth check error:", error);
       }
     };
 
     const fetchReviews = async () => {
       try {
-        const res = await axios.get(`http://localhost:8030/reviews/${id}`);
+        const res = await api.get(`/reviews/${id}`);
         setReviews(res.data || []);
-      } catch (err) {
+      } catch (error) {
         setReviews([]);
       }
     };
 
     const fetchAverageRating = async () => {
       try {
-        const res = await axios.get(`http://localhost:8030/reviews/average/${id}`);
+        const res = await api.get(`/reviews/average/${id}`);
         setAverageRating(res.data.averageRating || 0);
-      } catch (err) {
+      } catch (error) {
         setAverageRating(0);
       }
     };
 
     if (id) {
       fetchProduct();
+      checkAuth();
       fetchReviews();
       fetchAverageRating();
-    } else {
-      setError("No product ID provided");
-      setLoading(false);
     }
-
-    checkAuth();
   }, [id]);
 
   // Check if user has already reviewed
@@ -118,21 +121,16 @@ function ProductPage() {
   const handleAddToCart = async () => {
     if (!userId) {
       alert("Please login to add items to cart");
-      navigate("/login");
       return;
     }
 
     try {
       setAddToCartStatus({ loading: true, error: null, success: false });
-      const response = await axios.post(
-        "http://localhost:8030/cart",
-        {
-          userId,
-          productId: id,
-          quantity: quantity
-        },
-        { withCredentials: true }
-      );
+      const response = await api.post("/cart", {
+        userId: userId,
+        productId: id,
+        quantity: quantity
+      }, { withCredentials: true });
 
       if (response.data) {
         setCartCount(prev => prev + quantity);
@@ -148,7 +146,7 @@ function ProductPage() {
       console.error("Error adding to cart:", error);
       setAddToCartStatus({ 
         loading: false, 
-        error: error.response?.data?.error || "Failed to add item to cart. Please try again.", 
+        error: (error.response?.data?.error) || "Failed to add item to cart", 
         success: false 
       });
     }
@@ -169,10 +167,10 @@ function ProductPage() {
     }
     setReviewSubmitting(true);
     try {
-      await axios.post('http://localhost:8030/reviews', {
+      await api.post('/reviews', {
         listingId: id,
         userId,
-        username: JSON.parse(sessionStorage.getItem('userData'))?.name || 'User',
+        username: (JSON.parse(sessionStorage.getItem("userData"))?.name) || "User",
         rating: newRating,
         comment: newComment.trim()
       }, { withCredentials: true });
@@ -180,9 +178,9 @@ function ProductPage() {
       setNewRating(0);
       setNewComment('');
       // Refresh reviews and average
-      const res = await axios.get(`http://localhost:8030/reviews/${id}`);
+      const res = await api.get(`/reviews/${id}`);
       setReviews(res.data || []);
-      const avgRes = await axios.get(`http://localhost:8030/reviews/average/${id}`);
+      const avgRes = await api.get(`/reviews/average/${id}`);
       setAverageRating(avgRes.data.averageRating || 0);
     } catch (err) {
       setReviewError(err.response?.data?.error || 'Failed to submit review.');
@@ -211,11 +209,11 @@ function ProductPage() {
     setEditError(null);
     setEditSubmitting(true);
     try {
-      await axios.put(`http://localhost:8030/reviews/${reviewId}`,
+      await api.put(`/reviews/${reviewId}`,
         {
           listingId: id,
           userId,
-          username: JSON.parse(sessionStorage.getItem('userData'))?.name || 'User',
+          username: (JSON.parse(sessionStorage.getItem("userData"))?.name) || "User",
           rating: editRating,
           comment: editComment.trim()
         },
@@ -225,9 +223,9 @@ function ProductPage() {
       setEditRating(0);
       setEditComment('');
       // Refresh reviews and average
-      const res = await axios.get(`http://localhost:8030/reviews/${id}`);
+      const res = await api.get(`/reviews/${id}`);
       setReviews(res.data || []);
-      const avgRes = await axios.get(`http://localhost:8030/reviews/average/${id}`);
+      const avgRes = await api.get(`/reviews/average/${id}`);
       setAverageRating(avgRes.data.averageRating || 0);
     } catch (err) {
       setEditError(err.response?.data?.error || 'Failed to update review.');
@@ -240,11 +238,11 @@ function ProductPage() {
   const handleDeleteReview = async (reviewId) => {
     if (!window.confirm('Are you sure you want to delete your review?')) return;
     try {
-      await axios.delete(`http://localhost:8030/reviews/${reviewId}`, { withCredentials: true });
+      await api.delete(`/reviews/${reviewId}`, { withCredentials: true });
       // Refresh reviews and average
-      const res = await axios.get(`http://localhost:8030/reviews/${id}`);
+      const res = await api.get(`/reviews/${id}`);
       setReviews(res.data || []);
-      const avgRes = await axios.get(`http://localhost:8030/reviews/average/${id}`);
+      const avgRes = await api.get(`/reviews/average/${id}`);
       setAverageRating(avgRes.data.averageRating || 0);
     } catch (err) {
       alert(err.response?.data?.error || 'Failed to delete review.');
@@ -255,7 +253,7 @@ function ProductPage() {
   const handleDeleteListing = async () => {
     if (!window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
     try {
-      await axios.delete(`http://localhost:8030/listings/${id}`, { withCredentials: true });
+      await api.delete(`/listings/${id}`, { withCredentials: true });
       alert('Listing deleted successfully!');
       navigate('/');
     } catch (err) {

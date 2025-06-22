@@ -197,16 +197,15 @@ console.log("✅ Test route added");
 if (process.env.NODE_ENV === 'production') {
   const staticPath = path.join(__dirname, '../frontend2/build');
   app.use(express.static(staticPath));
-  app.get('/*', function(req, res) {
-    const indexPath = path.join(staticPath, 'index.html');
-    res.sendFile(indexPath, function(err) {
-      if (err) {
-        console.error('❌ Error sending index.html in catch-all route:', err);
-        res.status(err.status || 500).send('Error serving React app');
-      } else {
-        console.log('✅ index.html served for:', req.path);
-      }
-    });
+
+  // Catch-all: serve index.html for any non-API route
+  app.use((req, res, next) => {
+    const indexFile = path.join(staticPath, 'index.html');
+    if (fs.existsSync(indexFile)) {
+      res.sendFile(indexFile);
+    } else {
+      res.status(404).send('Static index.html not found.');
+    }
   });
 }
 

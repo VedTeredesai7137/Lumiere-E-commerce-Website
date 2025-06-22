@@ -1,5 +1,6 @@
 /* eslint-env node */
 const path = require('path');
+const history = require('connect-history-api-fallback');
 
 // Always load environment variables, but prefer production env vars if available
 require('dotenv').config({ path: path.join(__dirname, '.env') });
@@ -196,17 +197,15 @@ console.log("✅ Test route added");
 // --- Production static file serving (AFTER all API routes) ---
 if (process.env.NODE_ENV === 'production') {
   const staticPath = path.join(__dirname, '../frontend2/build');
-  app.use(express.static(staticPath));
 
-  // Catch-all: serve index.html for any non-API route
-  app.use((req, res, next) => {
-    const indexFile = path.join(staticPath, 'index.html');
-    if (fs.existsSync(indexFile)) {
-      res.sendFile(indexFile);
-    } else {
-      res.status(404).send('Static index.html not found.');
-    }
-  });
+  app.use(history({
+    rewrites: [
+      { from: /^\/(listings|reviews|cart|orders|login|register|adminlogin|logout|check-auth)/, to: ctx => ctx.parsedUrl.pathname },
+      { from: /^\/assets\/.*$/, to: ctx => ctx.parsedUrl.pathname }
+    ]
+  }));
+
+  app.use(express.static(staticPath));
 }
 
 // Error handler for other errors (must come after all routes)

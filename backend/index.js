@@ -195,67 +195,11 @@ console.log("✅ Test route added");
 
 // --- Production static file serving (AFTER all API routes) ---
 if (process.env.NODE_ENV === 'production') {
-  try {
-    console.log("📌 Setting up production static serving...");
-    const staticPath = path.join(__dirname, '../frontend2/build');
-    console.log("📁 Static files path:", staticPath);
-    
-    // Check if build directory exists
-    if (!fs.existsSync(staticPath)) {
-      console.error("❌ React build directory does not exist:", staticPath);
-      console.log("💡 Make sure to run 'npm run build' in the frontend2 directory");
-    } else {
-      console.log("✅ React build directory exists");
-      const files = fs.readdirSync(staticPath);
-      console.log("📦 Build directory contents:", files);
-    }
-    
-    // Serve static files with proper MIME types
-    app.use(express.static(staticPath, {
-      setHeaders: (res, filePath) => {
-        if (filePath.endsWith('.css')) {
-          res.setHeader('Content-Type', 'text/css');
-        } else if (filePath.endsWith('.js')) {
-          res.setHeader('Content-Type', 'application/javascript');
-        } else if (filePath.endsWith('.json')) {
-          res.setHeader('Content-Type', 'application/json');
-        } else if (filePath.endsWith('.png')) {
-          res.setHeader('Content-Type', 'image/png');
-        } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
-          res.setHeader('Content-Type', 'image/jpeg');
-        } else if (filePath.endsWith('.svg')) {
-          res.setHeader('Content-Type', 'image/svg+xml');
-        } else if (filePath.endsWith('.ico')) {
-          res.setHeader('Content-Type', 'image/x-icon');
-        }
-      }
-    }));
-    console.log("✅ Static serving configured");
-    
-    // Simple catch-all route for React app (AFTER static files)
-    app.get('/*', (req, res) => {
-      const indexPath = path.join(__dirname, '../frontend2/build/index.html');
-      if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-      } else {
-        res.status(404).json({ 
-          message: "React app not available yet. API is running.",
-          apiEndpoints: [
-            "/listings", "/reviews", "/cart", "/orders",
-            "/login", "/register", "/adminlogin", "/logout",
-            "/check-auth", "/test"
-          ]
-        });
-      }
-    });
-    
-    console.log("✅ Production setup complete");
-    
-  } catch (err) {
-    console.error("❌ Error setting up production routes:", err.message);
-    console.error("Stack trace:", err.stack);
-    throw err;
-  }
+  const staticPath = path.join(__dirname, '../frontend2/build');
+  app.use(express.static(staticPath));
+  app.get('/*', (req, res) => {
+    res.sendFile(path.join(staticPath, 'index.html'));
+  });
 }
 
 // Error handler for other errors (must come after all routes)

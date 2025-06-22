@@ -91,14 +91,14 @@ const CreateListing = () => {
       formData.append("price", listing.price);
       formData.append("category", listing.category);
       formData.append("metalType", listing.metalType);
-
+      
       // Append images
       selectedImages.forEach((image) => {
         formData.append("images", image);
       });
 
       const response = await api.post("/listings", formData, {
-        headers: {
+        headers: { 
           "Content-Type": "multipart/form-data",
           withCredentials: true
         },
@@ -125,7 +125,7 @@ const CreateListing = () => {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
         <h2 className="text-3xl font-serif font-bold text-gray-800 mb-8 text-center">Create Jewelry Listing</h2>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>

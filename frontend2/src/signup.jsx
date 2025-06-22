@@ -47,7 +47,7 @@ function Signup() {
           email: email,
           password: password
         }, { withCredentials: true });
-
+        
         if (loginResult.data.status === "ok") {
           sessionStorage.setItem("userData", JSON.stringify(loginResult.data.result));
           navigate("/home");

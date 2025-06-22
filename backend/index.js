@@ -1,7 +1,6 @@
 /* eslint-env node */
-if (process.env.NODE_ENV !== "production") {
+// Always load environment variables, but prefer production env vars if available
   require('dotenv').config();
-}
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -42,6 +41,19 @@ console.log("Node environment:", process.env.NODE_ENV);
 
 const dbUrl = process.env.ATLASDB_URL;
 
+// Check if required environment variables are set
+if (!dbUrl) {
+  console.error("❌ ATLASDB_URL environment variable is not set!");
+  console.error("Please set your MongoDB connection string in the .env file or environment variables");
+  process.exit(1);
+}
+
+if (!process.env.SECRET) {
+  console.error("❌ SECRET environment variable is not set!");
+  console.error("Please set your session secret in the .env file or environment variables");
+  process.exit(1);
+}
+
 mongoose.connect(dbUrl)
   .then(() => console.log("MongoDB Atlas Connected Successfully"))
   .catch((err) => console.error("MongoDB Connection Error:", err));
@@ -70,7 +82,9 @@ const sessionOptions = {
 
 // Middleware setup
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.NODE_ENV === "production" 
+    ? ["https://lumiere-csxw.onrender.com", "https://www.lumiere-csxw.onrender.com"]
+    : "http://localhost:5173",
   credentials: true
 }));
 app.use(express.json());
@@ -147,7 +161,7 @@ try {
   console.log("📌 Mounting authorization routes...");
   app.use("/", authorizationRoutes);
   console.log("✅ Authorization routes mounted successfully");
-} catch (err) {
+  } catch (err) {
   console.error("❌ Error mounting authorization routes:", err.message);
   if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
     console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in authorization routes!");
@@ -166,7 +180,7 @@ try {
     res.send("Test route works");
   });
   console.log("✅ Test route added successfully");
-} catch (err) {
+  } catch (err) {
   console.error("❌ Error adding test route:", err.message);
   if (err.message.includes('pathToRegexpError') || err.message.includes('Missing parameter name')) {
     console.error("🚨 PATH-TO-REGEXP ERROR DETECTED in test route!");
@@ -224,11 +238,43 @@ process.on('uncaughtException', (error) => {
 if (process.env.NODE_ENV === 'production') {
   try {
     console.log("📌 Setting up production static serving...");
-    console.log("📁 Static files path:", path.join(__dirname, '../frontend2/build'));
+    const staticPath = path.join(__dirname, '../frontend2/build');
+    console.log("📁 Static files path:", staticPath);
     
-    // Always set up static serving (will work even if directory doesn't exist)
-    app.use(express.static(path.join(__dirname, '../frontend2/build')));
-    console.log("✅ Static serving configured");
+    // Check if build directory exists
+    if (!fs.existsSync(staticPath)) {
+      console.error("❌ React build directory does not exist:", staticPath);
+      console.log("💡 Make sure to run 'npm run build' in the frontend2 directory");
+      } else {
+      console.log("✅ React build directory exists");
+      const files = fs.readdirSync(staticPath);
+      console.log("📦 Build directory contents:", files);
+    }
+    
+    // Set up static serving for React build files FIRST (before any other middleware)
+    app.use(express.static(staticPath, {
+      setHeaders: (res, filePath) => {
+        // Set correct MIME types for different file types
+        if (filePath.endsWith('.css')) {
+          res.setHeader('Content-Type', 'text/css');
+          console.log("🎨 Serving CSS file with correct MIME type:", filePath);
+        } else if (filePath.endsWith('.js')) {
+          res.setHeader('Content-Type', 'application/javascript');
+          console.log("📜 Serving JS file with correct MIME type:", filePath);
+        } else if (filePath.endsWith('.json')) {
+          res.setHeader('Content-Type', 'application/json');
+        } else if (filePath.endsWith('.png')) {
+          res.setHeader('Content-Type', 'image/png');
+        } else if (filePath.endsWith('.jpg') || filePath.endsWith('.jpeg')) {
+          res.setHeader('Content-Type', 'image/jpeg');
+        } else if (filePath.endsWith('.svg')) {
+          res.setHeader('Content-Type', 'image/svg+xml');
+        } else if (filePath.endsWith('.ico')) {
+          res.setHeader('Content-Type', 'image/x-icon');
+        }
+      }
+    }));
+    console.log("✅ Static serving configured with proper MIME types");
     
     console.log("📌 Adding catch-all middleware for React...");
     console.log("🔍 This middleware will handle all non-API routes");
@@ -252,15 +298,18 @@ if (process.env.NODE_ENV === 'production') {
           return next();
         }
         
-        // Skip static assets (let express.static handle them)
+        // Skip static assets - let express.static handle them
         if (req.path.startsWith('/assets/') || 
-            req.path.startsWith('/static/') || 
             req.path.includes('.js') || 
             req.path.includes('.css') || 
             req.path.includes('.ico') || 
             req.path.includes('.png') || 
             req.path.includes('.jpg') || 
-            req.path.includes('.svg')) {
+            req.path.includes('.svg') ||
+            req.path.includes('.woff') ||
+            req.path.includes('.woff2') ||
+            req.path.includes('.ttf') ||
+            req.path.includes('.eot')) {
           console.log("📦 Skipping static asset:", req.path);
           return next();
         }
@@ -377,4 +426,5 @@ app.listen(PORT, () => {
     }
   }
 });
-
+  
+  

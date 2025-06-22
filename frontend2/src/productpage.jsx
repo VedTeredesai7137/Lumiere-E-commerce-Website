@@ -128,8 +128,8 @@ function ProductPage() {
       setAddToCartStatus({ loading: true, error: null, success: false });
       const response = await api.post("/cart", {
         userId: userId,
-        productId: id,
-        quantity: quantity
+          productId: id,
+          quantity: quantity
       }, { withCredentials: true });
 
       if (response.data) {
@@ -608,7 +608,7 @@ function ProductPage() {
                       </form>
                     ) : (
                       <>
-                        <div className="text-gray-700 text-sm">{review.comment}</div>
+                    <div className="text-gray-700 text-sm">{review.comment}</div>
                         {userId && review.userId === userId && (
                           <div className="flex gap-2 mt-2">
                             <button

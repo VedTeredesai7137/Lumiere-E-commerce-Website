@@ -4,10 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "lint": "eslint . --ext .js,.jsx",
-    "heroku-postbuild": "cd ../frontend2 && npm install && npm run build"
+  "test": "echo \"Error: no test specified\" && exit 1",
+  "start": "node index.js",
+  "lint": "eslint . --ext .js,.jsx",
+  "heroku-postbuild": "cd ../frontend2 && npm install && npm run build && cp -r build ../backend/frontend2/"
   },
   "keywords": [],
   "author": "",

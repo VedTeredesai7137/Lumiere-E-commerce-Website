@@ -197,8 +197,16 @@ console.log("✅ Test route added");
 if (process.env.NODE_ENV === 'production') {
   const staticPath = path.join(__dirname, '../frontend2/build');
   app.use(express.static(staticPath));
-  app.get('/*', (req, res) => {
-    res.sendFile(path.join(staticPath, 'index.html'));
+  app.get('/*', function(req, res) {
+    const indexPath = path.join(staticPath, 'index.html');
+    res.sendFile(indexPath, function(err) {
+      if (err) {
+        console.error('❌ Error sending index.html in catch-all route:', err);
+        res.status(err.status || 500).send('Error serving React app');
+      } else {
+        console.log('✅ index.html served for:', req.path);
+      }
+    });
   });
 }
 
